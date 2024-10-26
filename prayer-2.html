@@ -1,6 +1,9 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prayer Time</title>
 <style>
     h1, h2, div { text-align: center; }
 
@@ -12,12 +15,16 @@
 </head>
 
 <body>
-    <h1>Your Prayer Time</h1>
-    <h2>Asr Jurisdiction: Hanafi<br/>
-    Convention: ISNA</h2>
+    <header>
+        <h1>Your Prayer Time</h1>
+        <h2>Asr Jurisdiction: Hanafi<br/>
+        Convention: ISNA</h2>
+    </header>
 
-    <div id="parent">
-        <script type="text/javascript" src="https://www.muslimpro.com/muslimprowidget.js?cityid=4348599&language=en&width=300&timeformat=24&headerbackgroundcolor=888888&headertextcolor=000000&textcolor=000000&rowbackgroundcolor1=eeeeee&rowbackgroundcolor2=cccccc&Convention=ISNA&asrjuristic=Hanafi" async></script>
-    </div>
+    <main>
+        <div id="parent" aria-live="polite">
+            <script type="text/javascript" src="https://www.muslimpro.com/muslimprowidget.js?cityid=4348599&language=en&width=300&timeformat=24&headerbackgroundcolor=888888&headertextcolor=000000&textcolor=000000&rowbackgroundcolor1=eeeeee&rowbackgroundcolor2=cccccc&Convention=ISNA&asrjuristic=Hanafi" async></script>
+        </div>
+    </main>
 </body>
 </html>
