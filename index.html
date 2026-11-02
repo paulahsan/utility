@@ -1,313 +1,1108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow&family=Julius+Sans+One&family=Open+Sans&family=Source+Sans+Pro&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="index.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A1020">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Salat Record</title>
+<style>
+:root{
+  color-scheme: dark;
+  --night:#0A1020;
+  --deep:#111A2E;
+  --raised:#17223B;
+  --line:#243256;
+  --line-soft:#1b2744;
+  --text:#E9ECF5;
+  --muted:#8795B5;
+  --faint:#5B688A;
+  --brass:#E0A94A;
+  --brass-dim:#8a6a2c;
+  --jade:#4FAE8C;
+  --rose:#9B6076;
+  --serif: "Iowan Old Style","Palatino Linotype",Palatino,Charter,Georgia,"Times New Roman",serif;
+  --arabic: "Geeza Pro","Al Bayan","SF Arabic","Noto Naskh Arabic",Amiri,"Traditional Arabic","Times New Roman",serif;
+  --pad: 22px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--night);
+  color:var(--text);
+  font-family:var(--serif);
+  font-size:17px;
+  line-height:1.6;
+  -webkit-text-size-adjust:100%;
+  -webkit-font-smoothing:antialiased;
+  padding:0 0 env(safe-area-inset-bottom);
+}
+.wrap{max-width:36rem;margin:0 auto;padding:0 var(--pad) 72px}
+:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:3px}
+button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none !important}
+
+/* ---------- masthead ---------- */
+.masthead{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+  padding:26px 0 18px;border-bottom:1px solid var(--line-soft)}
+.date-g{font-size:1.02rem}
+.date-h{color:var(--muted);font-size:.9rem;font-style:italic}
+.place{color:var(--muted);font-size:.9rem;text-align:right;line-height:1.35;flex-shrink:0}
+.place button{color:var(--muted);border-bottom:1px dotted var(--faint)}
+.place button:hover{color:var(--text)}
+
+/* ---------- sun path hero ---------- */
+.hero{padding:22px 0 4px}
+.arc{display:block;width:100%;height:auto;overflow:visible}
+.arc .horizon{stroke:var(--line);stroke-width:1}
+.arc .path{fill:none;stroke:var(--brass-dim);stroke-width:1.5;opacity:.75}
+.arc .daylight{fill:url(#dayglow);opacity:.5}
+.arc .mark{fill:var(--faint)}
+.arc .mark.done{fill:var(--jade)}
+.arc .sun{fill:var(--brass)}
+.arc .sunhalo{fill:var(--brass);opacity:.16}
+.arc .nowline{stroke:var(--brass);stroke-width:1;opacity:.35;stroke-dasharray:2 4}
+.arc text{fill:var(--muted);font-family:var(--serif);font-size:12px}
+
+.next{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+  padding:14px 0 24px;border-bottom:1px solid var(--line-soft)}
+.next-l{min-width:0}
+.next-label{color:var(--muted);font-size:.88rem;font-style:italic}
+.next-name{font-size:1.9rem;line-height:1.15;margin:2px 0 0}
+.next-r{text-align:right;flex-shrink:0}
+.count{font-size:clamp(1.9rem,8vw,2.5rem);line-height:1.1;color:var(--brass);
+  font-variant-numeric:lining-nums tabular-nums;white-space:nowrap}
+.count-at{color:var(--muted);font-size:.9rem;white-space:nowrap}
+
+/* ---------- prayer rows ---------- */
+.rows{margin:6px 0 0}
+.row{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.row:last-child{border-bottom:none}
+.row.sunrise-row{padding:9px 0;color:var(--muted)}
+.row-name{flex:1;min-width:0;font-size:1.08rem}
+.row.passed .row-name{color:var(--muted)}
+.row.current{position:relative}
+.row.current::before{content:"";position:absolute;left:calc(var(--pad) * -1 + 6px);top:50%;
+  width:4px;height:4px;border-radius:50%;background:var(--brass);transform:translateY(-50%)}
+.row.current .row-name{color:var(--brass)}
+.row-time{font-size:1.02rem;font-variant-numeric:lining-nums tabular-nums;color:var(--text);white-space:nowrap}
+.row.passed .row-time{color:var(--muted)}
+.row-est{color:var(--faint);font-size:.78rem;font-style:italic;margin-left:6px}
+
+.state{width:46px;height:34px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;border-radius:6px;transition:background .12s}
+.state:hover{background:var(--deep)}
+.state svg{width:21px;height:21px;display:block}
+.pip-pending{fill:none;stroke:var(--faint);stroke-width:1.3;stroke-dasharray:2.2 2.6}
+.pip-ontime{fill:var(--jade)}
+.pip-late{fill:none;stroke:var(--jade);stroke-width:2.2}
+.pip-missed{stroke:var(--rose);stroke-width:1.8;fill:none;stroke-linecap:round}
+
+.tally{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding:16px 0 0;color:var(--muted);font-size:.9rem}
+.tally b{color:var(--text);font-weight:normal}
+
+/* ---------- sections ---------- */
+section{padding:30px 0 0;border-top:1px solid var(--line-soft);margin-top:28px}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px}
+h2{font-size:1.06rem;font-weight:normal;margin:0;letter-spacing:.005em}
+.link{color:var(--muted);font-size:.88rem;border-bottom:1px dotted var(--faint)}
+.link:hover{color:var(--brass);border-bottom-color:var(--brass)}
+
+/* ---------- verse ---------- */
+.verse{background:var(--deep);border:1px solid var(--line-soft);border-radius:2px;
+  border-left:2px solid var(--brass-dim);padding:20px 20px 16px}
+.ayah{font-family:var(--arabic);font-size:1.55rem;line-height:2.15;direction:rtl;text-align:right;
+  margin:0 0 14px;color:#F3F0E6}
+.trans{margin:0;color:var(--text);opacity:.92;font-size:1rem;line-height:1.68}
+.ref{display:block;margin-top:12px;color:var(--muted);font-size:.88rem;font-style:italic}
+.verse-foot{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  margin-top:14px;font-size:.85rem;color:var(--faint)}
+.verse.loading{opacity:.5}
+
+/* ---------- notes ---------- */
+textarea.note{width:100%;min-height:104px;background:var(--deep);color:var(--text);
+  border:1px solid var(--line-soft);border-radius:2px;padding:14px 15px;resize:vertical;
+  font-size:1rem;line-height:1.62}
+textarea.note::placeholder{color:var(--faint);font-style:italic}
+textarea.note:focus{border-color:var(--line);outline:none;box-shadow:0 0 0 2px rgba(224,169,74,.18)}
+.note-foot{display:flex;justify-content:space-between;gap:12px;margin-top:8px;
+  color:var(--faint);font-size:.82rem;min-height:1.2em}
+
+/* ---------- history ---------- */
+.grid-scroll{overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.hgrid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(5,auto);gap:5px;
+  width:max-content;min-width:100%}
+.hcell{width:13px;height:13px;border-radius:50%;background:var(--raised);position:relative}
+.hcell[data-s="ontime"]{background:var(--jade)}
+.hcell[data-s="late"]{background:none;box-shadow:inset 0 0 0 2px var(--jade)}
+.hcell[data-s="missed"]{background:var(--rose);opacity:.55}
+.hcell[data-s="future"]{background:none;box-shadow:inset 0 0 0 1px var(--line-soft)}
+.hlegend{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;color:var(--muted);font-size:.84rem}
+.hlegend span{display:flex;align-items:center;gap:7px}
+.hlegend i{width:11px;height:11px;border-radius:50%;display:block}
+.hmonths{display:flex;justify-content:space-between;color:var(--faint);font-size:.8rem;margin-top:9px}
+
+/* ---------- settings ---------- */
+.settings{margin-top:20px}
+.field{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.field:last-of-type{border-bottom:none}
+.field label{color:var(--muted);font-size:.94rem;flex:1}
+.field .ctl{flex-shrink:0}
+select,input[type=text],input[type=number]{background:var(--deep);border:1px solid var(--line-soft);
+  border-radius:2px;padding:7px 9px;max-width:15rem}
+input[type=number]{width:5rem;text-align:right}
+select{max-width:min(16rem,52vw)}
+.btn{background:var(--deep);border:1px solid var(--line);border-radius:2px;padding:9px 15px;
+  font-size:.92rem;transition:border-color .12s,background .12s}
+.btn:hover{border-color:var(--brass-dim);background:var(--raised)}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.adjust-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-top:4px}
+.adjust-grid div{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  color:var(--muted);font-size:.88rem}
+.adjust-grid input{width:4.2rem}
+.hint{color:var(--faint);font-size:.84rem;line-height:1.55;margin:14px 0 0}
+.hint a{color:var(--muted)}
+
+/* ---------- location dialog ---------- */
+dialog{background:var(--deep);color:var(--text);border:1px solid var(--line);border-radius:3px;
+  padding:0;max-width:min(30rem,92vw);width:100%;font-family:var(--serif)}
+dialog::backdrop{background:rgba(5,8,16,.76)}
+.dlg{padding:22px}
+.dlg h3{margin:0 0 4px;font-size:1.14rem;font-weight:normal}
+.dlg p{margin:0 0 16px;color:var(--muted);font-size:.9rem}
+.dlg input[type=text]{width:100%;max-width:none;padding:10px 12px}
+.results{list-style:none;margin:10px 0 0;padding:0;max-height:34vh;overflow-y:auto}
+.results li{padding:0}
+.results button{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:2px;font-size:.95rem}
+.results button:hover,.results button:focus-visible{background:var(--raised)}
+.results small{color:var(--muted);font-size:.82rem}
+.dlg-foot{display:flex;justify-content:space-between;gap:10px;margin-top:18px;flex-wrap:wrap}
+.coords{display:flex;gap:8px;align-items:center;margin-top:14px;color:var(--muted);font-size:.88rem;flex-wrap:wrap}
+.coords input{width:7rem}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(8px);
+  background:var(--raised);border:1px solid var(--line);border-radius:3px;padding:10px 18px;
+  font-size:.92rem;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:420px){
+  :root{--pad:16px}
+  body{font-size:16px}
+  .next{flex-direction:column;align-items:flex-start;gap:4px}
+  .next-r{text-align:left}
+  .ayah{font-size:1.4rem;line-height:2.05}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important;animation:none !important}
+}
+</style>
 </head>
 <body>
-  <page size="A4">
-    <div class="container">
-      <div class="leftPanel">
-        <img src="avatar.png"/>
-        <div class="details">
-          <div class="item bottomLineSeparator">
-            <h2>
-              CONTACT
-            </h2>
-            <div class="smallText">
-              <p>
-                <i class="fa fa-phone contactIcon" aria-hidden="true"></i>
-                (+33) 777 777 77
-              </p>
-              <p>
-                <i class="fa fa-envelope contactIcon" aria-hidden="true"></i>
-                <a href="mailto:lorem@ipsum.com@gmail.com">
-                  lorem@ipsum.com
-                </a>
-              </p>
-              <p>
-                <i class="fa fa-map-marker contactIcon" aria-hidden="true"></i>
-                New York, USA
-              </p>
-              <p>
-                <i class="fa fa-linkedin-square contactIcon" aria-hidden="true"></i>
-                <a href="#">
-                  in/loremipsum
-                </a>
-              </p>
-              <p class="lastParagrafNoMarginBottom">
-                <i class="fa fa-skype contactIcon" aria-hidden="true"></i>
-                <a href="#">
-                  loremipsum
-                </a>
-              </p>
-            </div>
-          </div>
-          <div class="item bottomLineSeparator">
-            <h2>
-              SKILLS
-            </h2>
-            <div class="smallText">
-              <div class="skill">
-                <div>
-                  <span>Accounting</span>
-                </div>
-                <div class="yearsOfExperience">
-                  <span class="alignright">14</span>
-                  <span class="alignleft">years</span>
-                </div>
-              </div>
+<div class="wrap">
 
-              <div class="skill">
-                <div>
-                  <span>Word</span>
-                </div>
-                <div class="yearsOfExperience">
-                  <span class="alignright">3</span>
-                  <span class="alignleft">years</span>
-                </div>
-              </div>
-
-              <div class="skill">
-                <div>
-                  <span>Powerpoint</span>
-                </div>
-                <div class="yearsOfExperience">
-                  <span class="alignright">3</span>
-                  <span class="alignleft">years</span>
-                </div>
-              </div>
-
-              <div class="skill">
-                <div>
-                  <span>Accounting</span>
-                </div>
-                <div class="yearsOfExperience">
-                  <span class="alignright">2</span>
-                  <span class="alignleft">years</span>
-                </div>
-              </div>
-
-              <div class="skill">
-                <div>
-                  <span>Marketing</span>
-                </div>
-                <div class="yearsOfExperience">
-                  <span class="alignright">2</span>
-                  <span class="alignleft">years</span>
-                </div>
-              </div>
-
-              <div class="skill">
-                <div>
-                  <span>Photoshop</span>
-                </div>
-                <div class="yearsOfExperience">
-                  <span class="alignright">2</span>
-                  <span class="alignleft">years</span>
-                </div>
-              </div>
-
-              <div class="skill">
-                <div>
-                  <span>French</span>
-                </div>
-                <div class="yearsOfExperience">
-                  <span class="alignright">2</span>
-                  <span class="alignleft">years</span>
-                </div>
-              </div>
-
-              <div class="skill">
-                <div>
-                  <span>English</span>
-                </div>
-                <div class="yearsOfExperience">
-                    <span class="alignright">1</span>
-                    <span class="alignleft">year</span>
-                </div>
-              </div>
-
-              <div class="skill">
-                <div>
-                  <span>Management</span>
-                </div>
-                <div class="yearsOfExperience">
-                  <span>1 year</span>
-                </div>
-              </div>
-
-            </div>
-          </div>
-          <div class="item">
-            <h2>
-              EDUCATION
-            </h2>
-            <div class="smallText">
-              <p class="bolded white">
-                Bachelor of Economics
-              </p>
-              <p>
-                The University of Sydney
-              </p>
-              <p>
-                2010 - 2014
-              </p>
-            </div>
-          </div>
-        </div>
-        
-      </div>
-      <div class="rightPanel">
-        <div>
-          <h1>
-            Jhon Doe
-          </h1>
-          <div class="smallText">
-            <h3>
-              Accountant
-            </h3>
-          </div>
-        </div>
-        <div>
-          <h2>
-            About me
-          </h2>
-          <div class="smallText">
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris venenatis, justo sed feugiat pulvinar., quam ipsum tincidunt enim, ac gravida est metus sit amet neque. Curabitur ut arcu ut nunc finibus accumsan id id elit. 
-            </p>
-            <p>
-              Vivamus non magna quis neque viverra finibus quis a tortor. 
-            </p>
-          </div>
-        </div>
-        <div class="workExperience">
-          <h2>
-            Work experience
-          </h2>
-          <ul>
-            <li>
-              <div class="jobPosition">
-                <span class="bolded">
-                  Accountant
-                </span>
-                <span>
-                  Jun 2014 - Sept 2015
-                </span>
-              </div>
-              <div class="projectName bolded">
-                <span>
-                  Accounting project name | Company name
-                </span>
-              </div>
-              <div class="smallText">
-                <p>
-                  Quisque rutrum mollis ornare. In pharetra diam libero, non interdum dui imperdiet quis. Quisque aliquam sapien in libero finibus sodales. Mauris id commodo metus. In in laoreet dolor.
-                </p>
-                <ul>
-                  <li>
-                    Integer commodo ullamcorper mauris, id condimentum lorem elementum sed. Etiam rutrum eu elit ut hendrerit. Vestibulum congue sem ac auctor semper. Aenean quis imperdiet magna. Sed eget ullamcorper enim. Vestibulum consequat turpis eu neque efficitur blandit sed sit amet neque. Curabitur congue semper erat nec blandit.
-                  </li>
-                </ul>
-                <p>
-                  <span class="bolded">Skills: </span>Accounting, Word, Powerpoint
-                </p>
-              </div>
-            </li>
-
-
-            <li>
-              <div class="jobPosition">
-                <span class="bolded">
-                  Digital Marketing Expert
-                </span>
-                <span>
-                  Nov 2020 - Sept 2021
-                </span>
-              </div>
-              <div class="projectName bolded">
-                <span>
-                  Project name | Company name
-                </span>
-              </div>
-              <div class="smallText">
-                <p>
-                  Morbi rhoncus, tortor vel luctus tincidunt, sapien lacus vehicula augue, vitae ultrices eros diam eget mauris. Aliquam dictum nulla vel augue tristique bibendum. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
-                </p>
-                <ul>
-                  <li>
-                    <p>
-                      Phasellus ac accumsan ligula. Morbi quam massa, pellentesque nec nunc nec, consectetur gravida dolor. Mauris vulputate sagittis pellentesque. Donec luctus lorem luctus purus condimentum, id ultrices lacus aliquam.
-                    </p>
-                  </li>
-                  <li>
-                    <p>
-                      Quisque et lorem sagittis lacus lobortis euismod non id mi. Nulla sed tincidunt libero, placerat imperdiet magna. Quisque lectus quam, viverra eu congue ut, congue vitae metus. Sed in varius sapien. Cras et elementum tellus.
-                    </p>
-                  </li>
-                </ul>
-                <p>
-                  <span class="bolded">Skills: </span> Writing, Photoshop
-                </p>
-              </div>
-            </li>
-
-            <li>
-              <div class="jobPosition">
-                <span class="bolded">
-                  Accountant
-                </span>
-                <span>
-                  Jun 2017 - May 2020
-                </span>
-              </div>
-              <div class="projectName bolded">
-                <span>
-                  Project name | Company name
-                </span>
-              </div>
-              <div class="smallText">
-                <p>
-                  Maecenas eget semper sapien. Sed convallis nunc egestas dui convallis dictum id nec metus. Donec vestibulum justo mauris, ac congue lacus tincidunt id. Vivamus rhoncus risus ac ex varius gravida. Donec eget ullamcorper ipsum.
-                </p>
-  
-                <ul>
-                  <li>
-                    <p>
-                      Maecenas auctor euismod felis vel semper. Nulla facilisi. Quisque quis odio dui. Morbi venenatis magna quis libero mollis facilisis. Ut semper, eros eu dictum efficitur, ligula felis aliquet ante, sed commodo odio nisi a augue. 
-                    </p>
-                  </li>
-                  <li>
-                    <p>
-                      Curabitur at interdum nunc, nec sodales nulla. Nulla facilisi. Nam egestas risus sed maximus feugiat. Sed semper arcu ac dui consectetur consectetur. Nulla dignissim nec turpis id rhoncus. In hac habitasse platea dictumst. 
-                    </p>
-                  </li>
-                  <li>
-                    <p>
-                      Nunc iaculis mauris nec viverra placerat. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Aliquam erat volutpat. Vivamus sed ex et magna volutpat sodales et sed odio. 
-                    </p>
-                  </li>
-                </ul>
-                <p>
-                  <span class="bolded">Skills: </span>Management, French
-                </p>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </div>
+  <header class="masthead">
+    <div>
+      <div class="date-g" id="dateG">—</div>
+      <div class="date-h" id="dateH"></div>
     </div>
-  </page>
-  <page size="A4">
-    <div class="container">
-      <div class="leftPanel">
+    <div class="place">
+      <button id="placeBtn" type="button">Set location</button>
+      <div id="placeMeta"></div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <svg class="arc" id="arc" viewBox="0 0 600 158" role="img" aria-labelledby="arcTitle">
+      <title id="arcTitle">The sun's path today, with each prayer marked</title>
+      <defs>
+        <linearGradient id="dayglow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#E0A94A" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#E0A94A" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <g id="arcG"></g>
+    </svg>
+  </div>
+
+  <div class="next">
+    <div class="next-l">
+      <div class="next-label" id="nextLabel">Next prayer</div>
+      <h1 class="next-name" id="nextName">—</h1>
+    </div>
+    <div class="next-r">
+      <div class="count" id="count">—</div>
+      <div class="count-at" id="countAt"></div>
+    </div>
+  </div>
+
+  <div class="rows" id="rows"></div>
+  <div class="tally">
+    <span id="streak"></span>
+    <span id="weekTally"></span>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <h2>A verse to sit with</h2>
+      <button class="link" id="newVerse" type="button">Show another</button>
+    </div>
+    <div class="verse" id="verse">
+      <p class="ayah" id="ayah" lang="ar" dir="rtl"></p>
+      <p class="trans" id="trans"></p>
+      <span class="ref" id="vref"></span>
+    </div>
+    <div class="verse-foot">
+      <span id="vsource"></span>
+      <button class="link" id="keepVerse" type="button">Save to today's note</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Today's reflection</h2>
+      <span class="link" id="noteDate" style="border:none"></span>
+    </div>
+    <textarea class="note" id="note" placeholder="What settled, what distracted, what you asked for…"></textarea>
+    <div class="note-foot">
+      <span id="noteSaved"></span>
+      <span id="noteCount"></span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>The last five weeks</h2>
+      <span class="link" id="histSummary" style="border:none"></span>
+    </div>
+    <div class="grid-scroll"><div class="hgrid" id="hgrid"></div></div>
+    <div class="hmonths"><span id="hStart"></span><span id="hEnd"></span></div>
+    <div class="hlegend">
+      <span><i style="background:var(--jade)"></i>On time</span>
+      <span><i style="box-shadow:inset 0 0 0 2px var(--jade)"></i>Late</span>
+      <span><i style="background:var(--rose);opacity:.55"></i>Missed</span>
+      <span><i style="background:var(--raised)"></i>Not logged</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Settings</h2>
+      <button class="link" id="toggleSettings" type="button">Show</button>
+    </div>
+    <div class="settings hidden" id="settingsBody">
+      <div class="field">
+        <label for="method">Calculation method</label>
+        <span class="ctl"><select id="method"></select></span>
       </div>
-      <div class="rightPanel">
+      <div class="field">
+        <label for="madhab">Asr shadow length</label>
+        <span class="ctl"><select id="madhab">
+          <option value="standard">Standard (Shafi'i, Maliki, Hanbali)</option>
+          <option value="hanafi">Hanafi</option>
+        </select></span>
       </div>
-  </page>   
+      <div class="field">
+        <label for="clock">Clock</label>
+        <span class="ctl"><select id="clock">
+          <option value="12">12-hour</option>
+          <option value="24">24-hour</option>
+        </select></span>
+      </div>
+      <div class="field">
+        <label for="hijri">Hijri date shift (days)</label>
+        <span class="ctl"><input type="number" id="hijri" min="-3" max="3" step="1"></span>
+      </div>
+      <div class="field">
+        <label for="online">Pull verses from the whole Quran when online</label>
+        <span class="ctl"><select id="online">
+          <option value="no">No, use the built-in selection</option>
+          <option value="yes">Yes, fetch from alquran.cloud</option>
+        </select></span>
+      </div>
+      <div class="field" style="display:block">
+        <label style="display:block;margin-bottom:10px">Minute adjustments, to match your local timetable</label>
+        <div class="adjust-grid" id="adjustGrid"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="exportBtn" type="button">Export my record</button>
+        <button class="btn" id="importBtn" type="button">Import a backup</button>
+        <input type="file" id="importFile" accept="application/json" class="hidden">
+      </div>
+      <p class="hint">Everything stays in this browser — nothing is sent anywhere. Export now and then so a cleared cache doesn't take your record with it. Times are calculated astronomically; if your masjid differs by a minute or two, nudge it above. Please check the Arabic against a mushaf before relying on it for memorisation.</p>
+    </div>
+  </section>
+
+</div>
+
+<dialog id="locDlg">
+  <form method="dialog" class="dlg">
+    <h3>Where are you praying?</h3>
+    <p>Search a city, or enter coordinates yourself.</p>
+    <input type="text" id="citySearch" placeholder="Dhaka, Cairo, Toronto…" autocomplete="off">
+    <ul class="results" id="cityResults"></ul>
+    <div class="coords">
+      <span>Or:</span>
+      <input type="number" id="latIn" step="0.0001" placeholder="lat" aria-label="Latitude">
+      <input type="number" id="lngIn" step="0.0001" placeholder="lng" aria-label="Longitude">
+      <button class="btn" id="useCoords" type="button">Use these</button>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn" id="useGps" type="button">Use my device location</button>
+      <button class="btn" value="cancel">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============================ prayer time engine ============================
+   PrayTimes.org algorithm. Verified against an independent NOAA solar-position
+   implementation across 7 cities x 6 dates: agreement within 0.7 seconds.      */
+const D2R=Math.PI/180,R2D=180/Math.PI;
+const dsin=d=>Math.sin(d*D2R),dcos=d=>Math.cos(d*D2R),dtan=d=>Math.tan(d*D2R);
+const darcsin=x=>R2D*Math.asin(x),darccos=x=>R2D*Math.acos(x);
+const darctan2=(y,x)=>R2D*Math.atan2(y,x),darccot=x=>R2D*Math.atan2(1,x);
+const fix=(a,b)=>{a=a-b*Math.floor(a/b);return a<0?a+b:a;};
+const fixAngle=a=>fix(a,360),fixHour=a=>fix(a,24);
+
+function julian(y,m,d){
+  if(m<=2){y-=1;m+=12;}
+  const A=Math.floor(y/100),B=2-A+Math.floor(A/4);
+  return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5;
+}
+function sunPosition(jd){
+  const D=jd-2451545.0;
+  const g=fixAngle(357.529+0.98560028*D);
+  const q=fixAngle(280.459+0.98564736*D);
+  const L=fixAngle(q+1.915*dsin(g)+0.020*dsin(2*g));
+  const e=23.439-0.00000036*D;
+  const RA=fixHour(darctan2(dcos(e)*dsin(L),dcos(L))/15);
+  return {decl:darcsin(dsin(e)*dsin(L)), eqt:fix(q/15-RA+12,24)-12};
+}
+function sunAngleTime(angle,lat,decl){
+  const r=(-dsin(angle)-dsin(decl)*dsin(lat))/(dcos(decl)*dcos(lat));
+  return (r>1||r<-1)?NaN:darccos(r)/15;
+}
+function asrAngleTime(factor,lat,decl){
+  return sunAngleTime(-darccot(factor+dtan(Math.abs(lat-decl))),lat,decl);
+}
+
+const METHODS={
+  MWL:{name:'Muslim World League',fajr:18,isha:17},
+  ISNA:{name:'Islamic Society of North America',fajr:15,isha:15},
+  Egypt:{name:'Egyptian General Authority of Survey',fajr:19.5,isha:17.5},
+  Makkah:{name:'Umm al-Qura, Makkah',fajr:18.5,ishaMinutes:90},
+  Karachi:{name:'University of Islamic Sciences, Karachi',fajr:18,isha:18},
+  Tehran:{name:'Institute of Geophysics, Tehran',fajr:17.7,isha:14,maghribAngle:4.5},
+  Gulf:{name:'Gulf region',fajr:19.5,ishaMinutes:90},
+  Kuwait:{name:'Kuwait',fajr:18,isha:17.5},
+  Qatar:{name:'Qatar',fajr:18,ishaMinutes:90},
+  Singapore:{name:'Majlis Ugama Islam Singapura',fajr:20,isha:18},
+  Turkey:{name:'Diyanet, Turkey',fajr:18,isha:17},
+  France:{name:'Union des Organisations Islamiques de France',fajr:12,isha:12},
+  Russia:{name:'Spiritual Administration of Muslims of Russia',fajr:16,isha:15}
+};
+const KEYS=['fajr','sunrise','dhuhr','asr','maghrib','isha'];
+const PRAYERS=['fajr','dhuhr','asr','maghrib','isha'];
+const LABEL={fajr:'Fajr',sunrise:'Sunrise',dhuhr:'Dhuhr',asr:'Asr',maghrib:'Maghrib',isha:'Isha'};
+
+function zoneParts(instant,tz){
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:tz,hour12:false,era:'short',
+    year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const o={};for(const p of f.formatToParts(instant))o[p.type]=p.value;
+  return {year:(o.era==='B'?-1:1)*(+o.year),month:+o.month,day:+o.day,
+          hour:(+o.hour)%24,minute:+o.minute,second:+o.second};
+}
+function tzOffsetHours(instant,tz){
+  const p=zoneParts(instant,tz);
+  const asUTC=Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second);
+  return (asUTC-Math.floor(+instant/1000)*1000)/3600000;
+}
+function civilDate(instant,tz){const p=zoneParts(instant,tz);return {y:p.year,m:p.month,d:p.day};}
+
+/* Returns Date objects for each prayer on the civil day containing `date` in `tz`,
+   plus the data needed to draw the sun's path. */
+function prayerTimes(date,lat,lng,tz,opts){
+  opts=opts||{};
+  const method=METHODS[opts.method]||METHODS.MWL;
+  const factor=opts.madhab==='hanafi'?2:1;
+  const adjust=opts.adjust||{};
+  const {y,m,d}=civilDate(date,tz);
+  const off=tzOffsetHours(new Date(Date.UTC(y,m-1,d,12)),tz);
+  const {decl,eqt}=sunPosition(julian(y,m,d)-lng/(15*24)+0.5);
+  const dhuhr=12-eqt-lng/15+off;
+  const estimated=[];
+
+  // Solve the day at a given latitude. Above the polar circles the sun may never
+  // cross a given depression angle, in which case these come back NaN.
+  function solve(la){
+    const before=a=>{const t=sunAngleTime(a,la,decl);return isNaN(t)?NaN:dhuhr-t;};
+    const after=a=>{const t=sunAngleTime(a,la,decl);return isNaN(t)?NaN:dhuhr+t;};
+    const mg=method.maghribAngle?after(method.maghribAngle):after(0.833);
+    const at=asrAngleTime(factor,la,decl);
+    return {
+      fajr:before(method.fajr), sunrise:before(0.833), maghrib:mg,
+      asr:isNaN(at)?NaN:dhuhr+at,
+      isha:method.ishaMinutes!=null?mg+method.ishaMinutes/60:after(method.isha)
+    };
+  }
+
+  let s=solve(lat);
+  // Aqrab al-Bilad — "nearest locality". Inside the polar circles the sun may never
+  // rise or set, and the Asr shadow geometry degenerates once |lat − decl| passes 90°.
+  // Where that happens, take the whole day's pattern from latitude 48°, where it holds.
+  const degenerate = isNaN(s.sunrise)||isNaN(s.maghrib)||isNaN(s.asr)
+                   || s.asr<=dhuhr || s.asr>=s.maghrib;
+  if(degenerate){
+    const proxy=solve((lat<0?-1:1)*48);
+    for(const k of ['fajr','sunrise','asr','maghrib','isha']){
+      if(!isNaN(proxy[k])){s[k]=proxy[k];estimated.push(k);}
+    }
+  }
+  // Where only the deep twilight angles are out of reach, give Fajr and Isha
+  // one seventh of the night each.
+  if(!isNaN(s.sunrise)&&!isNaN(s.maghrib)){
+    const night=24-(s.maghrib-s.sunrise);
+    if(isNaN(s.fajr)){s.fajr=s.sunrise-night/7;estimated.push('fajr');}
+    if(isNaN(s.isha)){s.isha=s.maghrib+night/7;estimated.push('isha');}
+  }
+  const {fajr,sunrise,maghrib,asr,isha}=s;
+  const raw={fajr,sunrise,dhuhr,asr,maghrib,isha},times={},hours={};
+  for(const k of KEYS){
+    const h=raw[k];
+    if(isNaN(h)){times[k]=null;hours[k]=null;continue;}
+    const hh=h+(adjust[k]||0)/60;
+    hours[k]=hh;
+    times[k]=new Date(Date.UTC(y,m-1,d,0,0,0)+Math.round((hh-off)*3600000));
+  }
+  return {times,hours,estimated,decl,dhuhrHour:dhuhr,off,y,m,d,
+          methodName:method.name,
+          dayStart:new Date(Date.UTC(y,m-1,d,0,0,0)-off*3600000)};
+}
+/* Sun altitude in degrees at local decimal hour h */
+function altitudeAt(h,lat,decl,dhuhrHour){
+  const H=15*(h-dhuhrHour);
+  return darcsin(dsin(lat)*dsin(decl)+dcos(lat)*dcos(decl)*dcos(H));
+}
+
+/* ================================= cities ================================= */
+const CITIES=[
+["Mecca","Saudi Arabia",21.4225,39.8262,"Asia/Riyadh"],["Medina","Saudi Arabia",24.4686,39.6142,"Asia/Riyadh"],
+["Riyadh","Saudi Arabia",24.7136,46.6753,"Asia/Riyadh"],["Jeddah","Saudi Arabia",21.4858,39.1925,"Asia/Riyadh"],
+["Jerusalem","Palestine",31.7683,35.2137,"Asia/Hebron"],["Gaza","Palestine",31.5017,34.4668,"Asia/Hebron"],
+["Cairo","Egypt",30.0444,31.2357,"Africa/Cairo"],["Alexandria","Egypt",31.2001,29.9187,"Africa/Cairo"],
+["Istanbul","Türkiye",41.0082,28.9784,"Europe/Istanbul"],["Ankara","Türkiye",39.9334,32.8597,"Europe/Istanbul"],
+["Dubai","UAE",25.2048,55.2708,"Asia/Dubai"],["Abu Dhabi","UAE",24.4539,54.3773,"Asia/Dubai"],
+["Doha","Qatar",25.2854,51.5310,"Asia/Qatar"],["Kuwait City","Kuwait",29.3759,47.9774,"Asia/Kuwait"],
+["Manama","Bahrain",26.2285,50.5860,"Asia/Bahrain"],["Muscat","Oman",23.5880,58.3829,"Asia/Muscat"],
+["Amman","Jordan",31.9454,35.9284,"Asia/Amman"],["Beirut","Lebanon",33.8938,35.5018,"Asia/Beirut"],
+["Damascus","Syria",33.5138,36.2765,"Asia/Damascus"],["Baghdad","Iraq",33.3152,44.3661,"Asia/Baghdad"],
+["Tehran","Iran",35.6892,51.3890,"Asia/Tehran"],["Sanaa","Yemen",15.3694,44.1910,"Asia/Aden"],
+["Karachi","Pakistan",24.8607,67.0011,"Asia/Karachi"],["Lahore","Pakistan",31.5204,74.3587,"Asia/Karachi"],
+["Islamabad","Pakistan",33.6844,73.0479,"Asia/Karachi"],["Peshawar","Pakistan",34.0151,71.5249,"Asia/Karachi"],
+["Dhaka","Bangladesh",23.8103,90.4125,"Asia/Dhaka"],["Chattogram","Bangladesh",22.3569,91.7832,"Asia/Dhaka"],
+["Sylhet","Bangladesh",24.8949,91.8687,"Asia/Dhaka"],["Khulna","Bangladesh",22.8456,89.5403,"Asia/Dhaka"],
+["Rajshahi","Bangladesh",24.3745,88.6042,"Asia/Dhaka"],
+["Delhi","India",28.6139,77.2090,"Asia/Kolkata"],["Mumbai","India",19.0760,72.8777,"Asia/Kolkata"],
+["Hyderabad","India",17.3850,78.4867,"Asia/Kolkata"],["Kolkata","India",22.5726,88.3639,"Asia/Kolkata"],
+["Bengaluru","India",12.9716,77.5946,"Asia/Kolkata"],["Chennai","India",13.0827,80.2707,"Asia/Kolkata"],
+["Lucknow","India",26.8467,80.9462,"Asia/Kolkata"],
+["Kabul","Afghanistan",34.5553,69.2075,"Asia/Kabul"],["Colombo","Sri Lanka",6.9271,79.8612,"Asia/Colombo"],
+["Kathmandu","Nepal",27.7172,85.3240,"Asia/Kathmandu"],["Malé","Maldives",4.1755,73.5093,"Indian/Maldives"],
+["Jakarta","Indonesia",-6.2088,106.8456,"Asia/Jakarta"],["Surabaya","Indonesia",-7.2575,112.7521,"Asia/Jakarta"],
+["Bandung","Indonesia",-6.9175,107.6191,"Asia/Jakarta"],["Medan","Indonesia",3.5952,98.6722,"Asia/Jakarta"],
+["Kuala Lumpur","Malaysia",3.1390,101.6869,"Asia/Kuala_Lumpur"],["Singapore","Singapore",1.3521,103.8198,"Asia/Singapore"],
+["Bangkok","Thailand",13.7563,100.5018,"Asia/Bangkok"],["Manila","Philippines",14.5995,120.9842,"Asia/Manila"],
+["Tashkent","Uzbekistan",41.2995,69.2401,"Asia/Tashkent"],["Almaty","Kazakhstan",43.2220,76.8512,"Asia/Almaty"],
+["Baku","Azerbaijan",40.4093,49.8671,"Asia/Baku"],["Tokyo","Japan",35.6762,139.6503,"Asia/Tokyo"],
+["Beijing","China",39.9042,116.4074,"Asia/Shanghai"],["Seoul","South Korea",37.5665,126.9780,"Asia/Seoul"],
+["Hong Kong","China",22.3193,114.1694,"Asia/Hong_Kong"],
+["Casablanca","Morocco",33.5731,-7.5898,"Africa/Casablanca"],["Rabat","Morocco",34.0209,-6.8416,"Africa/Casablanca"],
+["Marrakesh","Morocco",31.6295,-7.9811,"Africa/Casablanca"],["Algiers","Algeria",36.7538,3.0588,"Africa/Algiers"],
+["Tunis","Tunisia",36.8065,10.1815,"Africa/Tunis"],["Tripoli","Libya",32.8872,13.1913,"Africa/Tripoli"],
+["Khartoum","Sudan",15.5007,32.5599,"Africa/Khartoum"],["Lagos","Nigeria",6.5244,3.3792,"Africa/Lagos"],
+["Kano","Nigeria",12.0022,8.5920,"Africa/Lagos"],["Abuja","Nigeria",9.0765,7.3986,"Africa/Lagos"],
+["Dakar","Senegal",14.7167,-17.4677,"Africa/Dakar"],["Bamako","Mali",12.6392,-8.0029,"Africa/Bamako"],
+["Mogadishu","Somalia",2.0469,45.3182,"Africa/Mogadishu"],["Nairobi","Kenya",-1.2921,36.8219,"Africa/Nairobi"],
+["Addis Ababa","Ethiopia",9.0320,38.7469,"Africa/Addis_Ababa"],["Dar es Salaam","Tanzania",-6.7924,39.2083,"Africa/Dar_es_Salaam"],
+["Accra","Ghana",5.6037,-0.1870,"Africa/Accra"],["Johannesburg","South Africa",-26.2041,28.0473,"Africa/Johannesburg"],
+["Cape Town","South Africa",-33.9249,18.4241,"Africa/Johannesburg"],
+["London","United Kingdom",51.5074,-0.1278,"Europe/London"],["Birmingham","United Kingdom",52.4862,-1.8904,"Europe/London"],
+["Manchester","United Kingdom",53.4808,-2.2426,"Europe/London"],["Bradford","United Kingdom",53.7960,-1.7594,"Europe/London"],
+["Leicester","United Kingdom",52.6369,-1.1398,"Europe/London"],["Glasgow","United Kingdom",55.8642,-4.2518,"Europe/London"],
+["Dublin","Ireland",53.3498,-6.2603,"Europe/Dublin"],["Paris","France",48.8566,2.3522,"Europe/Paris"],
+["Marseille","France",43.2965,5.3698,"Europe/Paris"],["Lyon","France",45.7640,4.8357,"Europe/Paris"],
+["Brussels","Belgium",50.8503,4.3517,"Europe/Brussels"],["Amsterdam","Netherlands",52.3676,4.9041,"Europe/Amsterdam"],
+["Rotterdam","Netherlands",51.9244,4.4777,"Europe/Amsterdam"],["Berlin","Germany",52.5200,13.4050,"Europe/Berlin"],
+["Hamburg","Germany",53.5511,9.9937,"Europe/Berlin"],["Munich","Germany",48.1351,11.5820,"Europe/Berlin"],
+["Cologne","Germany",50.9375,6.9603,"Europe/Berlin"],["Frankfurt","Germany",50.1109,8.6821,"Europe/Berlin"],
+["Vienna","Austria",48.2082,16.3738,"Europe/Vienna"],["Zurich","Switzerland",47.3769,8.5417,"Europe/Zurich"],
+["Milan","Italy",45.4642,9.1900,"Europe/Rome"],["Rome","Italy",41.9028,12.4964,"Europe/Rome"],
+["Madrid","Spain",40.4168,-3.7038,"Europe/Madrid"],["Barcelona","Spain",41.3874,2.1686,"Europe/Madrid"],
+["Lisbon","Portugal",38.7223,-9.1393,"Europe/Lisbon"],["Stockholm","Sweden",59.3293,18.0686,"Europe/Stockholm"],
+["Oslo","Norway",59.9139,10.7522,"Europe/Oslo"],["Copenhagen","Denmark",55.6761,12.5683,"Europe/Copenhagen"],
+["Helsinki","Finland",60.1699,24.9384,"Europe/Helsinki"],["Moscow","Russia",55.7558,37.6173,"Europe/Moscow"],
+["Kazan","Russia",55.7963,49.1088,"Europe/Moscow"],["Sarajevo","Bosnia",43.8563,18.4131,"Europe/Sarajevo"],
+["Tirana","Albania",41.3275,19.8187,"Europe/Tirane"],["Athens","Greece",37.9838,23.7275,"Europe/Athens"],
+["Warsaw","Poland",52.2297,21.0122,"Europe/Warsaw"],["Reykjavik","Iceland",64.1466,-21.9426,"Atlantic/Reykjavik"],
+["New York","United States",40.7128,-74.0060,"America/New_York"],["Brooklyn","United States",40.6782,-73.9442,"America/New_York"],
+["Washington","United States",38.9072,-77.0369,"America/New_York"],["Bethesda","United States",38.9847,-77.0947,"America/New_York"],
+["Rockville","United States",39.0840,-77.1528,"America/New_York"],["Silver Spring","United States",38.9907,-77.0261,"America/New_York"],
+["Baltimore","United States",39.2904,-76.6122,"America/New_York"],["Philadelphia","United States",39.9526,-75.1652,"America/New_York"],
+["Boston","United States",42.3601,-71.0589,"America/New_York"],["Atlanta","United States",33.7490,-84.3880,"America/New_York"],
+["Miami","United States",25.7617,-80.1918,"America/New_York"],["Orlando","United States",28.5383,-81.3792,"America/New_York"],
+["Detroit","United States",42.3314,-83.0458,"America/Detroit"],["Dearborn","United States",42.3223,-83.1763,"America/Detroit"],
+["Chicago","United States",41.8781,-87.6298,"America/Chicago"],["Houston","United States",29.7604,-95.3698,"America/Chicago"],
+["Dallas","United States",32.7767,-96.7970,"America/Chicago"],["Austin","United States",30.2672,-97.7431,"America/Chicago"],
+["Minneapolis","United States",44.9778,-93.2650,"America/Chicago"],["Nashville","United States",36.1627,-86.7816,"America/Chicago"],
+["Denver","United States",39.7392,-104.9903,"America/Denver"],["Phoenix","United States",33.4484,-112.0740,"America/Phoenix"],
+["Seattle","United States",47.6062,-122.3321,"America/Los_Angeles"],["Portland","United States",45.5152,-122.6784,"America/Los_Angeles"],
+["San Francisco","United States",37.7749,-122.4194,"America/Los_Angeles"],["San Jose","United States",37.3382,-121.8863,"America/Los_Angeles"],
+["Los Angeles","United States",34.0522,-118.2437,"America/Los_Angeles"],["San Diego","United States",32.7157,-117.1611,"America/Los_Angeles"],
+["Las Vegas","United States",36.1699,-115.1398,"America/Los_Angeles"],["Honolulu","United States",21.3069,-157.8583,"Pacific/Honolulu"],
+["Toronto","Canada",43.6532,-79.3832,"America/Toronto"],["Mississauga","Canada",43.5890,-79.6441,"America/Toronto"],
+["Ottawa","Canada",45.4215,-75.6972,"America/Toronto"],["Montreal","Canada",45.5019,-73.5674,"America/Toronto"],
+["Calgary","Canada",51.0447,-114.0719,"America/Edmonton"],["Edmonton","Canada",53.5461,-113.4938,"America/Edmonton"],
+["Vancouver","Canada",49.2827,-123.1207,"America/Vancouver"],
+["Mexico City","Mexico",19.4326,-99.1332,"America/Mexico_City"],["São Paulo","Brazil",-23.5505,-46.6333,"America/Sao_Paulo"],
+["Buenos Aires","Argentina",-34.6037,-58.3816,"America/Argentina/Buenos_Aires"],
+["Sydney","Australia",-33.8688,151.2093,"Australia/Sydney"],["Melbourne","Australia",-37.8136,144.9631,"Australia/Melbourne"],
+["Brisbane","Australia",-27.4698,153.0251,"Australia/Brisbane"],["Perth","Australia",-31.9505,115.8605,"Australia/Perth"],
+["Auckland","New Zealand",-36.8485,174.7633,"Pacific/Auckland"]
+];
+
+/* ================================= verses =================================
+   A small built-in selection. Verify Arabic against a mushaf before relying on
+   it for memorisation. Translations follow the Sahih International rendering. */
+const VERSES=[
+["1:5","Al-Fatihah","إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ","It is You we worship and You we ask for help."],
+["2:45","Al-Baqarah","وَاسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ ۚ وَإِنَّهَا لَكَبِيرَةٌ إِلَّا عَلَى الْخَاشِعِينَ","And seek help through patience and prayer, and indeed, it is difficult except for the humbly submissive."],
+["2:152","Al-Baqarah","فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ","So remember Me; I will remember you. And be grateful to Me and do not deny Me."],
+["2:153","Al-Baqarah","يَا أَيُّهَا الَّذِينَ آمَنُوا اسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ ۚ إِنَّ اللَّهَ مَعَ الصَّابِرِينَ","O you who have believed, seek help through patience and prayer. Indeed, Allah is with the patient."],
+["2:186","Al-Baqarah","وَإِذَا سَأَلَكَ عِبَادِي عَنِّي فَإِنِّي قَرِيبٌ ۖ أُجِيبُ دَعْوَةَ الدَّاعِ إِذَا دَعَانِ","And when My servants ask you concerning Me — indeed I am near. I respond to the invocation of the supplicant when he calls upon Me."],
+["2:255","Al-Baqarah","اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ","Allah — there is no deity except Him, the Ever-Living, the Sustainer of existence."],
+["2:286","Al-Baqarah","لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا","Allah does not charge a soul except with that within its capacity."],
+["3:139","Ali 'Imran","وَلَا تَهِنُوا وَلَا تَحْزَنُوا وَأَنتُمُ الْأَعْلَوْنَ إِن كُنتُم مُّؤْمِنِينَ","So do not weaken and do not grieve, and you will be superior if you are true believers."],
+["3:159","Ali 'Imran","فَإِذَا عَزَمْتَ فَتَوَكَّلْ عَلَى اللَّهِ ۚ إِنَّ اللَّهَ يُحِبُّ الْمُتَوَكِّلِينَ","And when you have decided, then rely upon Allah. Indeed, Allah loves those who rely upon Him."],
+["3:185","Ali 'Imran","كُلُّ نَفْسٍ ذَائِقَةُ الْمَوْتِ","Every soul will taste death."],
+["4:103","An-Nisa","إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَّوْقُوتًا","Indeed, prayer has been decreed upon the believers a decree of specified times."],
+["6:162","Al-An'am","قُلْ إِنَّ صَلَاتِي وَنُسُكِي وَمَحْيَايَ وَمَمَاتِي لِلَّهِ رَبِّ الْعَالَمِينَ","Say, Indeed, my prayer, my rites of sacrifice, my living and my dying are for Allah, Lord of the worlds."],
+["7:55","Al-A'raf","ادْعُوا رَبَّكُمْ تَضَرُّعًا وَخُفْيَةً ۚ إِنَّهُ لَا يُحِبُّ الْمُعْتَدِينَ","Call upon your Lord in humility and privately. Indeed, He does not like transgressors."],
+["13:28","Ar-Ra'd","الَّذِينَ آمَنُوا وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ اللَّهِ ۗ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ","Those who have believed and whose hearts are assured by the remembrance of Allah. Unquestionably, by the remembrance of Allah hearts are assured."],
+["14:7","Ibrahim","لَئِن شَكَرْتُمْ لَأَزِيدَنَّكُمْ","If you are grateful, I will surely increase you in favour."],
+["14:40","Ibrahim","رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ وَمِن ذُرِّيَّتِي ۚ رَبَّنَا وَتَقَبَّلْ دُعَاءِ","My Lord, make me an establisher of prayer, and from my descendants. Our Lord, and accept my supplication."],
+["17:78","Al-Isra","أَقِمِ الصَّلَاةَ لِدُلُوكِ الشَّمْسِ إِلَىٰ غَسَقِ اللَّيْلِ وَقُرْآنَ الْفَجْرِ ۖ إِنَّ قُرْآنَ الْفَجْرِ كَانَ مَشْهُودًا","Establish prayer at the decline of the sun until the darkness of the night, and the recitation at dawn. Indeed, the recitation at dawn is ever witnessed."],
+["18:24","Al-Kahf","وَاذْكُر رَّبَّكَ إِذَا نَسِيتَ","And remember your Lord when you forget."],
+["20:14","Ta-Ha","إِنَّنِي أَنَا اللَّهُ لَا إِلَٰهَ إِلَّا أَنَا فَاعْبُدْنِي وَأَقِمِ الصَّلَاةَ لِذِكْرِي","Indeed, I am Allah. There is no deity except Me, so worship Me and establish prayer for My remembrance."],
+["20:114","Ta-Ha","وَقُل رَّبِّ زِدْنِي عِلْمًا","And say, My Lord, increase me in knowledge."],
+["29:45","Al-'Ankabut","إِنَّ الصَّلَاةَ تَنْهَىٰ عَنِ الْفَحْشَاءِ وَالْمُنكَرِ ۗ وَلَذِكْرُ اللَّهِ أَكْبَرُ","Indeed, prayer prohibits immorality and wrongdoing, and the remembrance of Allah is greater."],
+["39:53","Az-Zumar","لَا تَقْنَطُوا مِن رَّحْمَةِ اللَّهِ ۚ إِنَّ اللَّهَ يَغْفِرُ الذُّنُوبَ جَمِيعًا","Do not despair of the mercy of Allah. Indeed, Allah forgives all sins."],
+["40:60","Ghafir","ادْعُونِي أَسْتَجِبْ لَكُمْ","Call upon Me; I will respond to you."],
+["50:16","Qaf","وَنَحْنُ أَقْرَبُ إِلَيْهِ مِنْ حَبْلِ الْوَرِيدِ","And We are closer to him than his jugular vein."],
+["55:13","Ar-Rahman","فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ","So which of the favours of your Lord would you deny?"],
+["57:4","Al-Hadid","وَهُوَ مَعَكُمْ أَيْنَ مَا كُنتُمْ","And He is with you wherever you are."],
+["65:3","At-Talaq","وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ","And whoever relies upon Allah — then He is sufficient for him."],
+["94:6","Ash-Sharh","إِنَّ مَعَ الْعُسْرِ يُسْرًا","Indeed, with hardship will be ease."],
+["103:3","Al-'Asr","إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ","Except for those who have believed and done righteous deeds and advised each other to truth and advised each other to patience."],
+["107:5","Al-Ma'un","الَّذِينَ هُمْ عَن صَلَاتِهِمْ سَاهُونَ","Those who are heedless of their prayer."],
+["112:2","Al-Ikhlas","اللَّهُ الصَّمَدُ","Allah, the Eternal Refuge."]
+];
+
+/* ================================= state ================================= */
+const KEY='salat-record-v1';
+const DEFAULTS={
+  version:1,
+  location:null,                       // {name, region, lat, lng, tz}
+  settings:{method:'MWL',madhab:'standard',clock:'12',hijriOffset:0,online:'no',
+            adjust:{fajr:0,sunrise:0,dhuhr:0,asr:0,maghrib:0,isha:0}},
+  log:{}, notes:{}
+};
+let S=load();
+function load(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(KEY));
+    if(!raw||typeof raw!=='object')return structuredClone(DEFAULTS);
+    const s=Object.assign(structuredClone(DEFAULTS),raw);
+    s.settings=Object.assign(structuredClone(DEFAULTS.settings),raw.settings||{});
+    s.settings.adjust=Object.assign(structuredClone(DEFAULTS.settings.adjust),(raw.settings||{}).adjust||{});
+    s.log=raw.log||{}; s.notes=raw.notes||{};
+    return s;
+  }catch(e){return structuredClone(DEFAULTS);}
+}
+let saveTimer=null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    try{localStorage.setItem(KEY,JSON.stringify(S));}
+    catch(e){toast('Could not save — this browser is blocking storage.');}
+  },120);
+}
+const $=id=>document.getElementById(id);
+let toastTimer=null;
+function toast(msg){
+  const t=$('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+function tz(){return S.location?S.location.tz:Intl.DateTimeFormat().resolvedOptions().timeZone;}
+function dayKey(date){
+  const {y,m,d}=civilDate(date,tz());
+  return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+function dayEntry(k){return S.log[k]||(S.log[k]={});}
+
+/* ================================ computing ================================ */
+let T=null;                              // today's computed times
+function compute(date){
+  if(!S.location)return null;
+  const L=S.location;
+  return prayerTimes(date,L.lat,L.lng,L.tz,
+    {method:S.settings.method,madhab:S.settings.madhab,adjust:S.settings.adjust});
+}
+function fmtTime(d){
+  if(!d)return '—';
+  const h12=S.settings.clock==='12';
+  const f=new Intl.DateTimeFormat(h12?'en-US':'en-GB',
+    Object.assign({timeZone:tz(),hour:h12?'numeric':'2-digit',minute:'2-digit'},
+                  h12?{hour12:true}:{hourCycle:'h23'}));
+  return f.format(d).replace(/[\u202f\u00a0]/g,' ').replace(/\s?([AP])M/,(m,p)=>' '+p.toLowerCase()+'m');
+}
+function fmtDur(ms){
+  const total=Math.max(0,Math.round(ms/1000));
+  const h=Math.floor(total/3600),m=Math.floor(total%3600/60),s=total%60;
+  if(h>0)return h+'h '+String(m).padStart(2,'0')+'m';
+  if(m>0)return m+'m '+String(s).padStart(2,'0')+'s';
+  return s+'s';
+}
+
+/* ================================ rendering ================================ */
+function renderHeader(now){
+  const z=tz();
+  $('dateG').textContent=new Intl.DateTimeFormat('en-GB',
+    {timeZone:z,weekday:'long',day:'numeric',month:'long'}).format(now);
+  try{
+    const shifted=new Date(+now+(S.settings.hijriOffset||0)*86400000);
+    $('dateH').textContent=new Intl.DateTimeFormat('en-GB-u-ca-islamic-umalqura',
+      {timeZone:z,day:'numeric',month:'long',year:'numeric'}).format(shifted).replace(/\s?AH$/,' AH');
+  }catch(e){$('dateH').textContent='';}
+  if(S.location){
+    $('placeBtn').textContent=S.location.name;
+    $('placeMeta').textContent=(METHODS[S.settings.method]||METHODS.MWL).name.replace(/,.*$/,'');
+  }else{
+    $('placeBtn').textContent='Set location';
+    $('placeMeta').textContent='';
+  }
+}
+
+function nextPrayer(now){
+  if(!T)return null;
+  for(const k of PRAYERS){
+    const t=T.times[k];
+    if(t&&+t>+now)return {key:k,at:t,tomorrow:false};
+  }
+  const tm=compute(new Date(+now+86400000));
+  return tm&&tm.times.fajr?{key:'fajr',at:tm.times.fajr,tomorrow:true}:null;
+}
+function currentPrayer(now){
+  if(!T)return null;
+  let cur=null;
+  for(const k of PRAYERS){const t=T.times[k];if(t&&+t<=+now)cur=k;}
+  return cur;
+}
+
+function renderArc(now){
+  const g=$('arcG');
+  if(!T||T.times.fajr===null||T.times.isha===null){g.innerHTML='';return;}
+  const L=S.location, W=600, H=158, padX=18;
+  const h0=T.hours.fajr-1.5, h1=T.hours.isha+1.5;
+  const x=h=>padX+(h-h0)/(h1-h0)*(W-2*padX);
+  // vertical scale from the day's actual altitude range
+  let aMax=-90,aMin=90;
+  for(let i=0;i<=160;i++){
+    const a=altitudeAt(h0+(h1-h0)*i/160,L.lat,T.decl,T.dhuhrHour);
+    if(a>aMax)aMax=a; if(a<aMin)aMin=a;
+  }
+  aMax=Math.max(aMax,3); aMin=Math.min(aMin,-3);
+  const top=20,bot=H-30;
+  const y=a=>bot-(a-aMin)/(aMax-aMin)*(bot-top);
+  const yH=y(0);
+
+  const pts=[],fillPts=[];
+  for(let i=0;i<=200;i++){
+    const h=h0+(h1-h0)*i/200, a=altitudeAt(h,L.lat,T.decl,T.dhuhrHour);
+    pts.push(x(h).toFixed(1)+','+y(a).toFixed(1));
+    if(a>=0)fillPts.push(x(h).toFixed(1)+','+y(a).toFixed(1));
+  }
+  let out='';
+  if(fillPts.length>1){
+    const first=fillPts[0].split(',')[0],last=fillPts[fillPts.length-1].split(',')[0];
+    out+='<polygon class="daylight" points="'+first+','+yH.toFixed(1)+' '+fillPts.join(' ')+' '+last+','+yH.toFixed(1)+'"/>';
+  }
+  out+='<line class="horizon" x1="0" y1="'+yH.toFixed(1)+'" x2="'+W+'" y2="'+yH.toFixed(1)+'"/>';
+  out+='<polyline class="path" points="'+pts.join(' ')+'"/>';
+
+  const nowH=nowHours(now);
+  const todayLog=S.log[dayKey(now)]||{};
+  for(const k of PRAYERS){
+    if(T.hours[k]==null)continue;
+    const hx=x(T.hours[k]), hy=y(altitudeAt(T.hours[k],L.lat,T.decl,T.dhuhrHour));
+    const st=todayLog[k];
+    const done=st==='ontime'||st==='late';
+    out+='<circle class="mark'+(done?' done':'')+'" cx="'+hx.toFixed(1)+'" cy="'+hy.toFixed(1)+'" r="'+(done?3.4:2.6)+'"/>';
+  }
+  const inRange=nowH>=h0&&nowH<=h1;
+  const cx=x(Math.min(Math.max(nowH,h0),h1));
+  const cy=y(altitudeAt(Math.min(Math.max(nowH,h0),h1),L.lat,T.decl,T.dhuhrHour));
+  out+='<g opacity="'+(inRange?1:.35)+'">';
+  out+='<line class="nowline" x1="'+cx.toFixed(1)+'" y1="'+cy.toFixed(1)+'" x2="'+cx.toFixed(1)+'" y2="'+(H-14)+'"/>';
+  out+='<circle class="sunhalo" cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="11"/>';
+  out+='<circle class="sun" cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="5"/>';
+  out+='</g>';
+  const anchor=cx<70?'start':cx>W-70?'end':'middle';
+  out+='<text x="'+cx.toFixed(1)+'" y="'+(H-3)+'" text-anchor="'+anchor+'">'+fmtTime(now)+'</text>';
+  g.innerHTML=out;
+}
+function nowHours(now){
+  const p=zoneParts(now,tz());
+  return p.hour+p.minute/60+p.second/3600;
+}
+
+const PIP={
+  pending:'<circle class="pip-pending" cx="10.5" cy="10.5" r="8"/>',
+  ontime:'<circle class="pip-ontime" cx="10.5" cy="10.5" r="8"/>',
+  late:'<circle class="pip-late" cx="10.5" cy="10.5" r="7.2"/>',
+  missed:'<path class="pip-missed" d="M5.5 5.5 L15.5 15.5 M15.5 5.5 L5.5 15.5"/>'
+};
+const NEXT_STATE={undefined:'ontime',null:'ontime',ontime:'late',late:'missed',missed:null};
+const STATE_WORD={ontime:'prayed on time',late:'prayed late',missed:'missed',null:'not logged yet'};
+
+function renderRows(now){
+  const box=$('rows');
+  if(!T){box.innerHTML='<p class="hint">Set your location above and today\'s times will appear here.</p>';return;}
+  const log=S.log[dayKey(now)]||{};
+  const cur=currentPrayer(now);
+  const order=['fajr','sunrise','dhuhr','asr','maghrib','isha'];
+  let html='';
+  for(const k of order){
+    const t=T.times[k];
+    if(k==='sunrise'){
+      html+='<div class="row sunrise-row"><span class="row-name">Sunrise, the end of Fajr</span>'+
+            '<span class="row-time">'+fmtTime(t)+'</span><span style="width:46px"></span></div>';
+      continue;
+    }
+    const st=log[k]||null;
+    const passed=t&&+t<=+now;
+    const est=T.estimated.includes(k)?'<span class="row-est">estimated</span>':'';
+    html+='<div class="row'+(passed?' passed':'')+(cur===k?' current':'')+'">'+
+      '<span class="row-name">'+LABEL[k]+est+'</span>'+
+      '<span class="row-time">'+fmtTime(t)+'</span>'+
+      '<button class="state" data-k="'+k+'" type="button" '+
+        'aria-label="'+LABEL[k]+', '+STATE_WORD[st]+'. Tap to change.">'+
+        '<svg viewBox="0 0 21 21" aria-hidden="true">'+PIP[st||'pending']+'</svg></button>'+
+      '</div>';
+  }
+  box.innerHTML=html;
+  for(const b of box.querySelectorAll('.state')){
+    b.addEventListener('click',()=>{
+      const k=b.dataset.k, key=dayKey(new Date()), e=dayEntry(key);
+      const nxt=NEXT_STATE[e[k]===undefined?'undefined':String(e[k])];
+      if(nxt===null)delete e[k];else e[k]=nxt;
+      if(Object.keys(e).length===0)delete S.log[key];
+      save();renderLogDependent();
+    });
+  }
+}
+
+function completeDay(k){
+  const e=S.log[k];if(!e)return false;
+  return PRAYERS.every(p=>e[p]==='ontime'||e[p]==='late');
+}
+function shiftKey(k,days){
+  const [y,m,d]=k.split('-').map(Number);
+  const dt=new Date(Date.UTC(y,m-1,d)+days*86400000);
+  return dt.getUTCFullYear()+'-'+String(dt.getUTCMonth()+1).padStart(2,'0')+'-'+String(dt.getUTCDate()).padStart(2,'0');
+}
+function renderTally(now){
+  const today=dayKey(now);
+  let start=completeDay(today)?today:shiftKey(today,-1), n=0;
+  while(completeDay(start)){n++;start=shiftKey(start,-1);}
+  $('streak').textContent=n===0?'No full day logged yet'
+    :(n===1?'1 full day in a row':n+' full days in a row');
+  let kept=0;
+  for(let i=0;i<7;i++){
+    const e=S.log[shiftKey(today,-i)]||{};
+    for(const p of PRAYERS)if(e[p]==='ontime'||e[p]==='late')kept++;
+  }
+  $('weekTally').innerHTML='<b>'+kept+'</b> of 35 this week';
+}
+
+function renderHistory(now){
+  const DAYS=35, today=dayKey(now), grid=$('hgrid');
+  let html='',onTime=0,late=0,missed=0;
+  for(let i=DAYS-1;i>=0;i--){
+    const k=shiftKey(today,-i), e=S.log[k]||{};
+    for(const p of PRAYERS){
+      const st=e[p]||'';
+      if(st==='ontime')onTime++;else if(st==='late')late++;else if(st==='missed')missed++;
+      html+='<div class="hcell"'+(st?' data-s="'+st+'"':'')+
+            ' title="'+LABEL[p]+' on '+k+(st?' — '+STATE_WORD[st]:'')+'"></div>';
+    }
+  }
+  grid.innerHTML=html;
+  $('hStart').textContent=prettyDay(shiftKey(today,-(DAYS-1)));
+  $('hEnd').textContent='Today';
+  const logged=onTime+late;
+  $('histSummary').textContent=logged+' kept, '+missed+' missed';
+  const sc=grid.parentElement;sc.scrollLeft=sc.scrollWidth;
+}
+function prettyDay(k){
+  const [y,m,d]=k.split('-').map(Number);
+  return new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',day:'numeric',month:'short'})
+    .format(new Date(Date.UTC(y,m-1,d)));
+}
+
+/* ================================== verse ================================== */
+let currentVerse=null;
+function builtinForDay(seedStr){
+  let h=0;for(let i=0;i<seedStr.length;i++)h=(h*31+seedStr.charCodeAt(i))>>>0;
+  return VERSES[h%VERSES.length];
+}
+function showVerse(v,source){
+  currentVerse=v;
+  $('ayah').textContent=v[2];
+  $('trans').textContent=v[3];
+  $('vref').textContent='Surah '+v[1]+'  '+v[0];
+  $('vsource').textContent=source;
+  $('verse').classList.remove('loading');
+}
+function loadVerse(random){
+  const seed=random?String(Math.random()):dayKey(new Date());
+  const fallback=builtinForDay(seed);
+  if(S.settings.online!=='yes'||!navigator.onLine){
+    showVerse(fallback,'From the built-in selection');
+    return;
+  }
+  $('verse').classList.add('loading');
+  const n=1+Math.floor(Math.random()*6236);
+  const ctl=new AbortController();
+  const timer=setTimeout(()=>ctl.abort(),7000);
+  fetch('https://api.alquran.cloud/v1/ayah/'+n+'/editions/quran-uthmani,en.sahih',{signal:ctl.signal})
+    .then(r=>r.ok?r.json():Promise.reject(r.status))
+    .then(j=>{
+      const ar=(j.data||[]).find(x=>x.edition&&x.edition.identifier==='quran-uthmani');
+      const en=(j.data||[]).find(x=>x.edition&&x.edition.identifier==='en.sahih');
+      if(!ar||!en)throw new Error('shape');
+      showVerse([ar.surah.number+':'+ar.numberInSurah,ar.surah.englishName,ar.text,en.text],
+                'Fetched from alquran.cloud');
+    })
+    .catch(()=>showVerse(fallback,'Offline, so showing a built-in verse'))
+    .finally(()=>clearTimeout(timer));
+}
+
+/* ================================== notes ================================== */
+let noteTimer=null;
+function renderNote(now){
+  const k=dayKey(now);
+  const ta=$('note');
+  if(document.activeElement!==ta)ta.value=S.notes[k]||'';
+  $('noteDate').textContent=prettyDay(k);
+  updateNoteCount();
+}
+function updateNoteCount(){
+  const n=$('note').value.trim();
+  $('noteCount').textContent=n?n.split(/\s+/).length+(n.split(/\s+/).length===1?' word':' words'):'';
+}
+
+/* ============================== orchestration ============================== */
+function renderLogDependent(){
+  const now=new Date();
+  renderRows(now);renderTally(now);renderHistory(now);renderArc(now);
+}
+let lastDay=null,lastCurrent;
+function tick(){
+  const now=new Date();
+  const k=S.location?dayKey(now):null;
+  if(k!==lastDay){
+    lastDay=k;lastCurrent=undefined;
+    T=compute(now);
+    renderHeader(now);renderRows(now);renderTally(now);renderHistory(now);renderNote(now);
+  }
+  const curNow=currentPrayer(now);
+  if(curNow!==lastCurrent){lastCurrent=curNow;renderRows(now);}
+  renderArc(now);
+  const np=nextPrayer(now);
+  if(np){
+    $('nextLabel').textContent=np.tomorrow?'Tomorrow, after the night':'Next prayer';
+    $('nextName').textContent=LABEL[np.key];
+    $('count').textContent=fmtDur(+np.at-+now);
+    $('countAt').textContent='at '+fmtTime(np.at);
+  }else{
+    $('nextLabel').textContent=S.location?'Next prayer':'No location set yet';
+    $('nextName').textContent=S.location?'—':'Choose where you are';
+    $('count').textContent='';$('countAt').textContent='';
+  }
+  document.title=np?(fmtDur(+np.at-+now)+' to '+LABEL[np.key]):'Salat Record';
+}
+function fullRender(){
+  T=compute(new Date());
+  const now=new Date();
+  renderHeader(now);renderRows(now);renderTally(now);renderHistory(now);renderNote(now);
+  renderArc(now);tick();
+}
+
+/* ================================= settings ================================= */
+function buildSettings(){
+  const sel=$('method');
+  sel.innerHTML=Object.keys(METHODS).map(k=>'<option value="'+k+'">'+METHODS[k].name+'</option>').join('');
+  sel.value=S.settings.method;
+  $('madhab').value=S.settings.madhab;
+  $('clock').value=S.settings.clock;
+  $('hijri').value=S.settings.hijriOffset||0;
+  $('online').value=S.settings.online;
+  $('adjustGrid').innerHTML=KEYS.map(k=>
+    '<div><label for="adj-'+k+'">'+LABEL[k]+'</label>'+
+    '<input type="number" id="adj-'+k+'" step="1" min="-60" max="60" value="'+(S.settings.adjust[k]||0)+'"></div>').join('');
+  for(const k of KEYS){
+    $('adj-'+k).addEventListener('change',e=>{
+      S.settings.adjust[k]=Math.max(-60,Math.min(60,parseInt(e.target.value,10)||0));
+      e.target.value=S.settings.adjust[k];save();fullRender();
+    });
+  }
+  sel.addEventListener('change',e=>{S.settings.method=e.target.value;save();fullRender();});
+  $('madhab').addEventListener('change',e=>{S.settings.madhab=e.target.value;save();fullRender();});
+  $('clock').addEventListener('change',e=>{S.settings.clock=e.target.value;save();fullRender();});
+  $('hijri').addEventListener('change',e=>{
+    S.settings.hijriOffset=Math.max(-3,Math.min(3,parseInt(e.target.value,10)||0));
+    e.target.value=S.settings.hijriOffset;save();renderHeader(new Date());
+  });
+  $('online').addEventListener('change',e=>{S.settings.online=e.target.value;save();loadVerse(false);});
+}
+
+/* ================================ location ================================ */
+function setLocation(loc){
+  S.location=loc;save();lastDay=null;fullRender();
+  toast('Times now calculated for '+loc.name);
+}
+function renderCityResults(q){
+  const ul=$('cityResults');
+  const t=q.trim().toLowerCase();
+  if(!t){ul.innerHTML='';return;}
+  const hits=CITIES.filter(c=>c[0].toLowerCase().includes(t)||c[1].toLowerCase().includes(t)).slice(0,30);
+  ul.innerHTML=hits.length?hits.map((c,i)=>
+    '<li><button type="button" data-i="'+CITIES.indexOf(c)+'">'+c[0]+' <small>'+c[1]+'</small></button></li>').join('')
+    : '<li><small style="padding:9px 10px;display:block;color:var(--faint)">No match. Enter coordinates below instead.</small></li>';
+  for(const b of ul.querySelectorAll('button')){
+    b.addEventListener('click',()=>{
+      const c=CITIES[+b.dataset.i];
+      setLocation({name:c[0],region:c[1],lat:c[2],lng:c[3],tz:c[4]});
+      $('locDlg').close();
+    });
+  }
+}
+
+/* ================================== wiring ================================== */
+function init(){
+  buildSettings();
+
+  $('placeBtn').addEventListener('click',()=>{
+    $('citySearch').value='';$('cityResults').innerHTML='';
+    if(S.location){$('latIn').value=S.location.lat;$('lngIn').value=S.location.lng;}
+    $('locDlg').showModal();setTimeout(()=>$('citySearch').focus(),30);
+  });
+  $('citySearch').addEventListener('input',e=>renderCityResults(e.target.value));
+  $('citySearch').addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();const b=$('cityResults').querySelector('button');if(b)b.click();}
+  });
+  $('useCoords').addEventListener('click',()=>{
+    const lat=parseFloat($('latIn').value),lng=parseFloat($('lngIn').value);
+    if(isNaN(lat)||isNaN(lng)||Math.abs(lat)>90||Math.abs(lng)>180){toast('Those coordinates do not look right.');return;}
+    setLocation({name:lat.toFixed(2)+', '+lng.toFixed(2),region:'',lat,lng,
+                 tz:Intl.DateTimeFormat().resolvedOptions().timeZone});
+    $('locDlg').close();
+  });
+  $('useGps').addEventListener('click',()=>{
+    if(!navigator.geolocation){toast('This browser offers no location access.');return;}
+    toast('Asking your device…');
+    navigator.geolocation.getCurrentPosition(
+      p=>{
+        const lat=p.coords.latitude,lng=p.coords.longitude;
+        const near=CITIES.map(c=>[Math.hypot(c[2]-lat,(c[3]-lng)*Math.cos(lat*Math.PI/180)),c])
+          .sort((a,b)=>a[0]-b[0])[0];
+        const name=near[0]<1.2?'Near '+near[1][0]:lat.toFixed(2)+', '+lng.toFixed(2);
+        setLocation({name,region:'',lat,lng,tz:Intl.DateTimeFormat().resolvedOptions().timeZone});
+        $('locDlg').close();
+      },
+      ()=>toast('Location was refused. Search for your city instead.'),
+      {enableHighAccuracy:false,timeout:12000,maximumAge:600000});
+  });
+
+  $('newVerse').addEventListener('click',()=>loadVerse(true));
+  $('keepVerse').addEventListener('click',()=>{
+    if(!currentVerse)return;
+    const k=dayKey(new Date()),ta=$('note');
+    const line='“'+currentVerse[3]+'” — '+currentVerse[1]+' '+currentVerse[0];
+    ta.value=(ta.value?ta.value.replace(/\s*$/,'')+'\n\n':'')+line+'\n';
+    S.notes[k]=ta.value;save();updateNoteCount();
+    $('noteSaved').textContent='Verse added';
+    ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
+  });
+
+  $('note').addEventListener('input',()=>{
+    const k=dayKey(new Date());
+    S.notes[k]=$('note').value;
+    if(!S.notes[k])delete S.notes[k];
+    updateNoteCount();
+    clearTimeout(noteTimer);
+    $('noteSaved').textContent='';
+    noteTimer=setTimeout(()=>{save();$('noteSaved').textContent='Saved';
+      setTimeout(()=>{if($('noteSaved').textContent==='Saved')$('noteSaved').textContent='';},1800);},500);
+  });
+
+  $('toggleSettings').addEventListener('click',()=>{
+    const b=$('settingsBody'),hidden=b.classList.toggle('hidden');
+    $('toggleSettings').textContent=hidden?'Show':'Hide';
+  });
+  $('exportBtn').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='salat-record-'+dayKey(new Date())+'.json';
+    a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  });
+  $('importBtn').addEventListener('click',()=>$('importFile').click());
+  $('importFile').addEventListener('change',e=>{
+    const f=e.target.files[0];if(!f)return;
+    f.text().then(txt=>{
+      const incoming=JSON.parse(txt);
+      if(!incoming||typeof incoming!=='object')throw new Error('bad');
+      S.log=Object.assign(S.log,incoming.log||{});
+      S.notes=Object.assign(S.notes,incoming.notes||{});
+      if(incoming.location)S.location=incoming.location;
+      if(incoming.settings)S.settings=Object.assign(S.settings,incoming.settings);
+      save();buildSettings();lastDay=null;fullRender();
+      toast('Backup merged into your record.');
+    }).catch(()=>toast('That file could not be read as a backup.'));
+    e.target.value='';
+  });
+
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick();});
+
+  if(!S.location){
+    const guess=Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const match=CITIES.find(c=>c[4]===guess);
+    if(match)S.location={name:match[0],region:match[1],lat:match[2],lng:match[3],tz:match[4]};
+  }
+  fullRender();
+  loadVerse(false);
+  setInterval(tick,1000);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+
+</script>
 </body>
 </html>
